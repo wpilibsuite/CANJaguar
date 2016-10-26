@@ -1,0 +1,114 @@
+import org.gradle.internal.os.OperatingSystem
+
+apply plugin: 'java'
+apply plugin: 'net.ltgt.errorprone'
+
+repositories {
+    mavenCentral()
+}
+
+configurations.errorprone {
+    resolutionStrategy.force 'com.google.errorprone:error_prone_core:2.0.9'
+}
+
+def generatedJNIHeaderLoc = "${buildDir}/include"
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["${rootDir}/java/src"]
+        }
+    }
+    }
+    
+dependencies {
+     compile 'edu.wpi.first.wpilibj:athena:2017.+'
+     runtime 'edu.wpi.first.wpilibj:athena:2017.+'
+     compile fileTree(dir: "${rootDir}/libraries/java", include: ['*.jar'])
+     runtime fileTree(dir: "${rootDir}/libraries/java", include: ['*.jar'])
+}
+
+jar {
+    description = 'Generates CANJaguar jar, with the JNI shared libraries embedded'
+    baseName = 'CANJaguar'
+    duplicatesStrategy = 'exclude'
+
+    dependsOn { classes }
+}
+
+project.tasks.whenTaskAdded { task ->
+        if (task.name == 'CANJaguarSharedLibrary') jar.dependsOn task
+}
+
+task CANJaguarJavaSource(type: Jar, dependsOn: classes) {
+    description = 'Generates the source jar for CANJaguar java'
+    group = 'WPILib'
+    baseName = 'CANJaguar'
+    classifier = "sources"
+    duplicatesStrategy = 'exclude'
+
+    from sourceSets.main.allJava
+}
+
+task CANJaguarJavadoc(type: Jar, dependsOn: javadoc) {
+    description = 'Generates the javadoc jar for CANJaguar java'
+    group = 'WPILib'
+    baseName = 'CANJaguar'
+    classifier = "javadoc"
+    duplicatesStrategy = 'exclude'
+
+    from javadoc.destinationDir
+}
+
+build.dependsOn CANJaguarJavaSource
+build.dependsOn CANJaguarJavadoc
+
+/**
+ * Generates the JNI headers
+ */
+task jniHeadersCANJaguar {
+    description = 'Generates JNI headers from edu.wpi.first.wpilibj.CANJaguar.*'
+    group = 'WPILib'
+    def outputFolder = file(generatedJNIHeaderLoc)
+    inputs.files sourceSets.main.output
+    outputs.file outputFolder
+    doLast {
+        outputFolder.mkdirs()
+    }
+}
+
+clean {
+    delete generatedJNIHeaderLoc
+}
+
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
+}
+
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+// This creates a lambda that the main build.gradle can access, which sets up the JNI includes for the
+// target build platform. This lambda is exposed as a property in the main build.gradle.
+ext.setupJniIncludes = { binaries ->
+    def platformSpecificIncludeFlag = { loc, cppCompiler ->
+        if (OperatingSystem.current().isWindows()) {
+            cppCompiler.args "/I$loc"
+        } else {
+            cppCompiler.args '-I', loc
+        }
+    }
+    binaries.all {
+        tasks.withType(CppCompile) {
+            cppCompiler.args '-I', file("${rootDir}/java/arm-linux").absolutePath
+            cppCompiler.args '-I', file("${rootDir}/java/arm-linux/linux").absolutePath
+
+            jniHeadersCANJaguar.outputs.files.each { file ->
+                cppCompiler.args '-I', file.getPath()
+            }
+
+            dependsOn jniHeadersCANJaguar
+        }
+    }
+}
