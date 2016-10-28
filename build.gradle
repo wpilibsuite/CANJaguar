@@ -11,23 +11,9 @@ allprojects {
     }
 }
 
-// Determine what repo to publish to. Default is development. Valid options are development, beta, stable, and release
-if (!hasProperty('repo')) {
-    allprojects {
-        ext.repo = 'development'
-    }
-}
+ext.useDriver = false
 
-ext.includeJava = !project.hasProperty('skipJava')
-
-
-ext.getPlatformPath = { binary ->
-    if (binary.targetPlatform.architecture.arm) {
-        return 'Linux/arm'
-    } else {
-        return binary.targetPlatform.operatingSystem.name + '/' + binary.targetPlatform.architecture.name
-    }
-}
+ext.compilerPrefixToUse = project.hasProperty('compilerPrefix') ? project.compilerPrefix : 'arm-frc-linux-gnueabi-'
 
 ext.setupDefines = { project, binaries ->
     binaries.all {
@@ -39,10 +25,12 @@ ext.setupDefines = { project, binaries ->
     }
 }
 
+apply from: "locations.gradle"
+
 ext.addUserLinks = { linker, targetPlatform, implLib ->
     def libPattern = /.*((\\/|\\).*)+lib(?<libName>.+).(.+)$/
     def libraryArgs = []
-    def libraryPath = file('libraries/CANJaguarDriver/lib').path
+    def libraryPath = file(driverLibraryLib).path
 
     // adds all libraries found in the driver folder
     def libraryTree = fileTree(libraryPath)
@@ -59,7 +47,7 @@ ext.addUserLinks = { linker, targetPlatform, implLib ->
     
     if (implLib) {
         // adds all libraries found in the impl folder
-        def implLibraryPath = file('libraries/CANJaguar/lib').path
+        def implLibraryPath = file(cppLibraryLib).path
         def implLibraryTree = fileTree(implLibraryPath)
         implLibraryTree.include '*.so'
         implLibraryTree.include '*.a'
@@ -81,16 +69,20 @@ ext.addUserLinks = { linker, targetPlatform, implLib ->
     }
 }
 
+apply from: "properties.gradle"
+
 apply from: "dependencies.gradle"
 
-ext.releaseDir = file("${rootDir}/release")
-apply from: "CANJaguar.gradle"
+if (useDriver) {
+    apply from: "driver.gradle"
+}
+apply from: "cpp.gradle"
 
-// Empty task for build so that ntcoreSourceZip and CANJaguarDriverSourceZip will be
+// Empty task for build so that zips will be
 // built when running ./gradlew build
 task build
 
-build.dependsOn CANJaguarSourceZip
+apply from: "releases.gradle"
 
 task clean(type: Delete) {
     description = "Deletes the build directory"
