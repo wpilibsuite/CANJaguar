@@ -20,6 +20,8 @@ ext.driverLibrarySrc = "${rootDir}/libraries/driver/src"
 ext.javaJNISrc = "${rootDir}/java/lib"
 ext.javaSrc = "${rootDir}/java/src"
 
+ext.LabVIEWLocation = "${rootDir}/LabVIEW"
+
 // Locations for libraries to include in the Java library
 ext.javaLibraryLoc = "${rootDir}/libraries/java/lib"
 

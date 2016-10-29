@@ -133,6 +133,10 @@ task userSharedZip(type: Zip) {
         }
     }
     
+    from(file(LabVIEWLocation)) {
+        into '/LabVIEW'
+    }
+    
     // If not embedded java, include java libs
     if (!embedJavaLibraries) {
         from(file(javaLibraryLoc)) {
@@ -242,7 +246,6 @@ task userStaticZip(type: Zip) {
         dependsOn javaProject.jar
         // Copy project java binary
         from (file(javaProject.jar.archivePath)) {
-           //from '*.jar'
             into '/java/lib'
         } 
     } else {
@@ -250,7 +253,6 @@ task userStaticZip(type: Zip) {
         dependsOn javaProject.jar
         // Copy project java binary
         from (file(javaProject.jar.archivePath)) {
-           //from '*.jar'
             into '/java/lib'
         }
     }
@@ -280,6 +282,10 @@ task userStaticZip(type: Zip) {
                 }
             }
         }
+    }
+    
+    from(file(LabVIEWLocation)) {
+        into '/LabVIEW'
     }
     
     // If not embedded java, include java libs
