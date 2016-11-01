@@ -24,6 +24,8 @@
 #include "PIDOutput.h"
 #include "tables/ITableListener.h"
 
+namespace frc {
+
 /**
  * Luminary Micro / Vex Robotics Jaguar Speed Control
  */
@@ -251,3 +253,4 @@ class CANJaguar : public MotorSafety,
   void InitCANJaguar();
   bool m_isInverted = false;
 };
+}  // namespace frc
