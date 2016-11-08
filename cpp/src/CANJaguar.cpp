@@ -17,6 +17,8 @@
 #include "Timer.h"
 #include "WPIErrors.h"
 
+namespace frc {
+
 #define tNIRIO_i32 int
 
 /* we are on ARM-LE now, not Freescale so no need to swap */
@@ -2055,3 +2057,4 @@ void CANJaguar::InitTable(std::shared_ptr<ITable> subTable) {
 }
 
 std::shared_ptr<ITable> CANJaguar::GetTable() const { return m_table; }
+}  // namespace frc
