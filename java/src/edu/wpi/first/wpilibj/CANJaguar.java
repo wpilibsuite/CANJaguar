@@ -10,6 +10,7 @@ package edu.wpi.first.wpilibj;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import edu.wpi.first.wpilibj.can.CANJaguarProto;
 import edu.wpi.first.wpilibj.can.CANJNI;
 import edu.wpi.first.wpilibj.can.CANMessageNotFoundException;
 import edu.wpi.first.wpilibj.tables.ITable;
@@ -31,8 +32,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   private MotorSafetyHelper m_safetyHelper;
   private static final Resource allocated = new Resource(63);
 
-  private static final int kFullMessageIDMask = CANJNI.CAN_MSGID_API_M | CANJNI.CAN_MSGID_MFR_M
-      | CANJNI.CAN_MSGID_DTYPE_M;
+  private static final int kFullMessageIDMask = CANJaguarProto.CAN_MSGID_API_M | CANJaguarProto.CAN_MSGID_MFR_M
+      | CANJaguarProto.CAN_MSGID_DTYPE_M;
   private static final int kSendMessagePeriod = 20;
 
   // Control Mode tags
@@ -210,8 +211,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     byte[] data = new byte[8];
 
     // Request firmware and hardware version only once
-    requestMessage(CANJNI.CAN_IS_FRAME_REMOTE | CANJNI.CAN_MSGID_API_FIRMVER);
-    requestMessage(CANJNI.LM_API_HWVER);
+    requestMessage(CANJNI.CAN_IS_FRAME_REMOTE | CANJaguarProto.CAN_MSGID_API_FIRMVER);
+    requestMessage(CANJaguarProto.LM_API_HWVER);
 
     // Wait until we've gotten all of the status data at least once.
     for (int i = 0; i < kReceiveStatusAttempts; i++) {
@@ -222,7 +223,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       if (!receivedFirmwareVersion) {
         try {
-          getMessage(CANJNI.CAN_MSGID_API_FIRMVER, CANJNI.CAN_MSGID_FULL_M, data);
+          getMessage(CANJaguarProto.CAN_MSGID_API_FIRMVER, CANJaguarProto.CAN_MSGID_FULL_M, data);
           m_firmwareVersion = unpackINT32(data);
           receivedFirmwareVersion = true;
         } catch (CANMessageNotFoundException ex) {
@@ -244,7 +245,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     }
 
     try {
-      getMessage(CANJNI.LM_API_HWVER, CANJNI.CAN_MSGID_FULL_M, data);
+      getMessage(CANJaguarProto.LM_API_HWVER, CANJaguarProto.CAN_MSGID_FULL_M, data);
       m_hardwareVersion = data[0];
     } catch (CANMessageNotFoundException ex) {
       // Not all Jaguar firmware reports a hardware version.
@@ -284,23 +285,23 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     // Disable periodic setpoints
     switch (m_controlMode) {
       case PercentVbus:
-        messageID = m_deviceNumber | CANJNI.LM_API_VOLT_T_SET;
+        messageID = m_deviceNumber | CANJaguarProto.LM_API_VOLT_T_SET;
         break;
 
       case Speed:
-        messageID = m_deviceNumber | CANJNI.LM_API_SPD_T_SET;
+        messageID = m_deviceNumber | CANJaguarProto.LM_API_SPD_T_SET;
         break;
 
       case Position:
-        messageID = m_deviceNumber | CANJNI.LM_API_POS_T_SET;
+        messageID = m_deviceNumber | CANJaguarProto.LM_API_POS_T_SET;
         break;
 
       case Current:
-        messageID = m_deviceNumber | CANJNI.LM_API_ICTRL_T_SET;
+        messageID = m_deviceNumber | CANJaguarProto.LM_API_ICTRL_T_SET;
         break;
 
       case Voltage:
-        messageID = m_deviceNumber | CANJNI.LM_API_VCOMP_T_SET;
+        messageID = m_deviceNumber | CANJaguarProto.LM_API_VCOMP_T_SET;
         break;
 
       default:
@@ -387,28 +388,28 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     if (m_controlEnabled) {
       switch (m_controlMode) {
         case PercentVbus:
-          messageID = CANJNI.LM_API_VOLT_T_SET;
+          messageID = CANJaguarProto.LM_API_VOLT_T_SET;
           dataSize = packPercentage(data, m_isInverted ? -outputValue : outputValue);
           break;
 
         case Speed:
-          messageID = CANJNI.LM_API_SPD_T_SET;
+          messageID = CANJaguarProto.LM_API_SPD_T_SET;
           dataSize = packFXP16_16(data, m_isInverted ? -outputValue : outputValue);
           break;
 
         case Position:
-          messageID = CANJNI.LM_API_POS_T_SET;
+          messageID = CANJaguarProto.LM_API_POS_T_SET;
           dataSize = packFXP16_16(data, outputValue);
           break;
 
         case Current:
-          messageID = CANJNI.LM_API_ICTRL_T_SET;
+          messageID = CANJaguarProto.LM_API_ICTRL_T_SET;
           dataSize = packFXP8_8(data, outputValue);
           break;
 
 
         case Voltage:
-          messageID = CANJNI.LM_API_VCOMP_T_SET;
+          messageID = CANJaguarProto.LM_API_VCOMP_T_SET;
           dataSize = packFXP8_8(data, m_isInverted ? -outputValue : outputValue);
           break;
 
@@ -487,13 +488,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     // If the Jaguar lost power, everything should be considered unverified
     try {
-      getMessage(CANJNI.LM_API_STATUS_POWER, CANJNI.CAN_MSGID_FULL_M, data);
+      getMessage(CANJaguarProto.LM_API_STATUS_POWER, CANJaguarProto.CAN_MSGID_FULL_M, data);
       boolean powerCycled = data[0] != 0;
 
       if (powerCycled) {
         // Clear the power cycled bit
         data[0] = 1;
-        sendMessage(CANJNI.LM_API_STATUS_POWER, data, 1);
+        sendMessage(CANJaguarProto.LM_API_STATUS_POWER, data, 1);
 
         // Mark everything as unverified
         m_controlModeVerified = false;
@@ -525,32 +526,32 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         // Remove any old values from netcomms. Otherwise, parameters
         // are incorrectly marked as verified based on stale messages.
         int[] messages =
-            new int[]{CANJNI.LM_API_SPD_REF, CANJNI.LM_API_POS_REF, CANJNI.LM_API_SPD_PC,
-                CANJNI.LM_API_POS_PC, CANJNI.LM_API_ICTRL_PC, CANJNI.LM_API_SPD_IC,
-                CANJNI.LM_API_POS_IC, CANJNI.LM_API_ICTRL_IC, CANJNI.LM_API_SPD_DC,
-                CANJNI.LM_API_POS_DC, CANJNI.LM_API_ICTRL_DC, CANJNI.LM_API_CFG_ENC_LINES,
-                CANJNI.LM_API_CFG_POT_TURNS, CANJNI.LM_API_CFG_BRAKE_COAST,
-                CANJNI.LM_API_CFG_LIMIT_MODE, CANJNI.LM_API_CFG_LIMIT_REV,
-                CANJNI.LM_API_CFG_MAX_VOUT, CANJNI.LM_API_VOLT_SET_RAMP,
-                CANJNI.LM_API_VCOMP_COMP_RAMP, CANJNI.LM_API_CFG_FAULT_TIME,
-                CANJNI.LM_API_CFG_LIMIT_FWD};
+            new int[]{CANJaguarProto.LM_API_SPD_REF, CANJaguarProto.LM_API_POS_REF, CANJaguarProto.LM_API_SPD_PC,
+                CANJaguarProto.LM_API_POS_PC, CANJaguarProto.LM_API_ICTRL_PC, CANJaguarProto.LM_API_SPD_IC,
+                CANJaguarProto.LM_API_POS_IC, CANJaguarProto.LM_API_ICTRL_IC, CANJaguarProto.LM_API_SPD_DC,
+                CANJaguarProto.LM_API_POS_DC, CANJaguarProto.LM_API_ICTRL_DC, CANJaguarProto.LM_API_CFG_ENC_LINES,
+                CANJaguarProto.LM_API_CFG_POT_TURNS, CANJaguarProto.LM_API_CFG_BRAKE_COAST,
+                CANJaguarProto.LM_API_CFG_LIMIT_MODE, CANJaguarProto.LM_API_CFG_LIMIT_REV,
+                CANJaguarProto.LM_API_CFG_MAX_VOUT, CANJaguarProto.LM_API_VOLT_SET_RAMP,
+                CANJaguarProto.LM_API_VCOMP_COMP_RAMP, CANJaguarProto.LM_API_CFG_FAULT_TIME,
+                CANJaguarProto.LM_API_CFG_LIMIT_FWD};
 
         for (int message : messages) {
           try {
-            getMessage(message, CANJNI.CAN_MSGID_FULL_M, data);
+            getMessage(message, CANJaguarProto.CAN_MSGID_FULL_M, data);
           } catch (CANMessageNotFoundException ex) {
             // no-op
           }
         }
       }
     } catch (CANMessageNotFoundException ex) {
-      requestMessage(CANJNI.LM_API_STATUS_POWER);
+      requestMessage(CANJaguarProto.LM_API_STATUS_POWER);
     }
 
     // Verify that any recently set parameters are correct
     if (!m_controlModeVerified && m_controlEnabled) {
       try {
-        getMessage(CANJNI.LM_API_STATUS_CMODE, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_STATUS_CMODE, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         JaguarControlMode mode = JaguarControlMode.values()[data[0]];
 
@@ -562,13 +563,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_STATUS_CMODE);
+        requestMessage(CANJaguarProto.LM_API_STATUS_CMODE);
       }
     }
 
     if (!m_speedRefVerified) {
       try {
-        getMessage(CANJNI.LM_API_SPD_REF, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_SPD_REF, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         int speedRef = data[0];
 
@@ -580,13 +581,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_SPD_REF);
+        requestMessage(CANJaguarProto.LM_API_SPD_REF);
       }
     }
 
     if (!m_posRefVerified) {
       try {
-        getMessage(CANJNI.LM_API_POS_REF, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_POS_REF, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         int posRef = data[0];
 
@@ -598,7 +599,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_POS_REF);
+        requestMessage(CANJaguarProto.LM_API_POS_REF);
       }
     }
 
@@ -607,15 +608,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       switch (m_controlMode) {
         case Speed:
-          message = CANJNI.LM_API_SPD_PC;
+          message = CANJaguarProto.LM_API_SPD_PC;
           break;
 
         case Position:
-          message = CANJNI.LM_API_POS_PC;
+          message = CANJaguarProto.LM_API_POS_PC;
           break;
 
         case Current:
-          message = CANJNI.LM_API_ICTRL_PC;
+          message = CANJaguarProto.LM_API_ICTRL_PC;
           break;
 
         default:
@@ -623,7 +624,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
       }
 
       try {
-        getMessage(message, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(message, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double punpacked = unpackFXP16_16(data);
 
@@ -644,15 +645,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       switch (m_controlMode) {
         case Speed:
-          message = CANJNI.LM_API_SPD_IC;
+          message = CANJaguarProto.LM_API_SPD_IC;
           break;
 
         case Position:
-          message = CANJNI.LM_API_POS_IC;
+          message = CANJaguarProto.LM_API_POS_IC;
           break;
 
         case Current:
-          message = CANJNI.LM_API_ICTRL_IC;
+          message = CANJaguarProto.LM_API_ICTRL_IC;
           break;
 
         default:
@@ -660,7 +661,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
       }
 
       try {
-        getMessage(message, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(message, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double iunpacked = unpackFXP16_16(data);
 
@@ -681,15 +682,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       switch (m_controlMode) {
         case Speed:
-          message = CANJNI.LM_API_SPD_DC;
+          message = CANJaguarProto.LM_API_SPD_DC;
           break;
 
         case Position:
-          message = CANJNI.LM_API_POS_DC;
+          message = CANJaguarProto.LM_API_POS_DC;
           break;
 
         case Current:
-          message = CANJNI.LM_API_ICTRL_DC;
+          message = CANJaguarProto.LM_API_ICTRL_DC;
           break;
 
         default:
@@ -697,7 +698,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
       }
 
       try {
-        getMessage(message, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(message, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double dunpacked = unpackFXP16_16(data);
 
@@ -715,7 +716,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     if (!m_neutralModeVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_BRAKE_COAST, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_BRAKE_COAST, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         NeutralMode mode = NeutralMode.valueOf(data[0]);
 
@@ -727,13 +728,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_BRAKE_COAST);
+        requestMessage(CANJaguarProto.LM_API_CFG_BRAKE_COAST);
       }
     }
 
     if (!m_encoderCodesPerRevVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_ENC_LINES, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_ENC_LINES, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         short codes = unpackINT16(data);
 
@@ -745,13 +746,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_ENC_LINES);
+        requestMessage(CANJaguarProto.LM_API_CFG_ENC_LINES);
       }
     }
 
     if (!m_potentiometerTurnsVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_POT_TURNS, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_POT_TURNS, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         short turns = unpackINT16(data);
 
@@ -763,13 +764,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_POT_TURNS);
+        requestMessage(CANJaguarProto.LM_API_CFG_POT_TURNS);
       }
     }
 
     if (!m_limitModeVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_LIMIT_MODE, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_LIMIT_MODE, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         LimitMode mode = LimitMode.valueOf(data[0]);
 
@@ -781,13 +782,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_LIMIT_MODE);
+        requestMessage(CANJaguarProto.LM_API_CFG_LIMIT_MODE);
       }
     }
 
     if (!m_forwardLimitVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_LIMIT_FWD, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_LIMIT_FWD, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double limit = unpackFXP16_16(data);
 
@@ -799,13 +800,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_LIMIT_FWD);
+        requestMessage(CANJaguarProto.LM_API_CFG_LIMIT_FWD);
       }
     }
 
     if (!m_reverseLimitVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_LIMIT_REV, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_LIMIT_REV, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double limit = unpackFXP16_16(data);
 
@@ -817,13 +818,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_LIMIT_REV);
+        requestMessage(CANJaguarProto.LM_API_CFG_LIMIT_REV);
       }
     }
 
     if (!m_maxOutputVoltageVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_MAX_VOUT, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_MAX_VOUT, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double voltage = unpackFXP8_8(data);
 
@@ -839,14 +840,14 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_MAX_VOUT);
+        requestMessage(CANJaguarProto.LM_API_CFG_MAX_VOUT);
       }
     }
 
     if (!m_voltageRampRateVerified) {
       if (m_controlMode == JaguarControlMode.PercentVbus) {
         try {
-          getMessage(CANJNI.LM_API_VOLT_SET_RAMP, CANJNI.CAN_MSGID_FULL_M, data);
+          getMessage(CANJaguarProto.LM_API_VOLT_SET_RAMP, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
           double rate = unpackPercentage(data);
 
@@ -859,12 +860,12 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
         } catch (CANMessageNotFoundException ex) {
           // Verification is needed but not available - request it again.
-          requestMessage(CANJNI.LM_API_VOLT_SET_RAMP);
+          requestMessage(CANJaguarProto.LM_API_VOLT_SET_RAMP);
         }
       }
     } else if (m_controlMode == JaguarControlMode.Voltage) {
       try {
-        getMessage(CANJNI.LM_API_VCOMP_COMP_RAMP, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_VCOMP_COMP_RAMP, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         double rate = unpackFXP8_8(data);
 
@@ -877,13 +878,13 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_VCOMP_COMP_RAMP);
+        requestMessage(CANJaguarProto.LM_API_VCOMP_COMP_RAMP);
       }
     }
 
     if (!m_faultTimeVerified) {
       try {
-        getMessage(CANJNI.LM_API_CFG_FAULT_TIME, CANJNI.CAN_MSGID_FULL_M, data);
+        getMessage(CANJaguarProto.LM_API_CFG_FAULT_TIME, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
         int faultTime = unpackINT16(data);
 
@@ -895,7 +896,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
         }
       } catch (CANMessageNotFoundException ex) {
         // Verification is needed but not available - request it again.
-        requestMessage(CANJNI.LM_API_CFG_FAULT_TIME);
+        requestMessage(CANJaguarProto.LM_API_CFG_FAULT_TIME);
       }
     }
 
@@ -944,7 +945,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    * @param reference Specify a speed reference.
    */
   private void setSpeedReference(int reference) {
-    sendMessage(CANJNI.LM_API_SPD_REF, new byte[]{(byte) reference}, 1);
+    sendMessage(CANJaguarProto.LM_API_SPD_REF, new byte[]{(byte) reference}, 1);
 
     m_speedReference = reference;
     m_speedRefVerified = false;
@@ -959,7 +960,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    * @param reference Specify a position reference.
    */
   private void setPositionReference(int reference) {
-    sendMessage(CANJNI.LM_API_POS_REF, new byte[]{(byte) reference}, 1);
+    sendMessage(CANJaguarProto.LM_API_POS_REF, new byte[]{(byte) reference}, 1);
 
     m_positionReference = reference;
     m_posRefVerified = false;
@@ -977,15 +978,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     switch (m_controlMode) {
       case Speed:
-        sendMessage(CANJNI.LM_API_SPD_PC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_SPD_PC, data, dataSize);
         break;
 
       case Position:
-        sendMessage(CANJNI.LM_API_POS_PC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_POS_PC, data, dataSize);
         break;
 
       case Current:
-        sendMessage(CANJNI.LM_API_ICTRL_PC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_ICTRL_PC, data, dataSize);
         break;
 
       default:
@@ -1009,15 +1010,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     switch (m_controlMode) {
       case Speed:
-        sendMessage(CANJNI.LM_API_SPD_IC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_SPD_IC, data, dataSize);
         break;
 
       case Position:
-        sendMessage(CANJNI.LM_API_POS_IC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_POS_IC, data, dataSize);
         break;
 
       case Current:
-        sendMessage(CANJNI.LM_API_ICTRL_IC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_ICTRL_IC, data, dataSize);
         break;
 
       default:
@@ -1041,15 +1042,15 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     switch (m_controlMode) {
       case Speed:
-        sendMessage(CANJNI.LM_API_SPD_DC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_SPD_DC, data, dataSize);
         break;
 
       case Position:
-        sendMessage(CANJNI.LM_API_POS_DC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_POS_DC, data, dataSize);
         break;
 
       case Current:
-        sendMessage(CANJNI.LM_API_ICTRL_DC, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_ICTRL_DC, data, dataSize);
         break;
 
       default:
@@ -1127,25 +1128,25 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   public void enableControl(double encoderInitialPosition) {
     switch (m_controlMode) {
       case PercentVbus:
-        sendMessage(CANJNI.LM_API_VOLT_T_EN, new byte[0], 0);
+        sendMessage(CANJaguarProto.LM_API_VOLT_T_EN, new byte[0], 0);
         break;
 
       case Speed:
-        sendMessage(CANJNI.LM_API_SPD_T_EN, new byte[0], 0);
+        sendMessage(CANJaguarProto.LM_API_SPD_T_EN, new byte[0], 0);
         break;
 
       case Position:
         byte[] data = new byte[8];
         int dataSize = packFXP16_16(data, encoderInitialPosition);
-        sendMessage(CANJNI.LM_API_POS_T_EN, data, dataSize);
+        sendMessage(CANJaguarProto.LM_API_POS_T_EN, data, dataSize);
         break;
 
       case Current:
-        sendMessage(CANJNI.LM_API_ICTRL_T_EN, new byte[0], 0);
+        sendMessage(CANJaguarProto.LM_API_ICTRL_T_EN, new byte[0], 0);
         break;
 
       case Voltage:
-        sendMessage(CANJNI.LM_API_VCOMP_T_EN, new byte[0], 0);
+        sendMessage(CANJaguarProto.LM_API_VCOMP_T_EN, new byte[0], 0);
         break;
       default:
         break;
@@ -1181,18 +1182,18 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void disableControl() {
     // Disable all control modes.
-    sendMessage(CANJNI.LM_API_VOLT_DIS, new byte[0], 0);
-    sendMessage(CANJNI.LM_API_SPD_DIS, new byte[0], 0);
-    sendMessage(CANJNI.LM_API_POS_DIS, new byte[0], 0);
-    sendMessage(CANJNI.LM_API_ICTRL_DIS, new byte[0], 0);
-    sendMessage(CANJNI.LM_API_VCOMP_DIS, new byte[0], 0);
+    sendMessage(CANJaguarProto.LM_API_VOLT_DIS, new byte[0], 0);
+    sendMessage(CANJaguarProto.LM_API_SPD_DIS, new byte[0], 0);
+    sendMessage(CANJaguarProto.LM_API_POS_DIS, new byte[0], 0);
+    sendMessage(CANJaguarProto.LM_API_ICTRL_DIS, new byte[0], 0);
+    sendMessage(CANJaguarProto.LM_API_VCOMP_DIS, new byte[0], 0);
 
     // Stop all periodic setpoints
-    sendMessage(CANJNI.LM_API_VOLT_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
-    sendMessage(CANJNI.LM_API_SPD_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
-    sendMessage(CANJNI.LM_API_POS_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
-    sendMessage(CANJNI.LM_API_ICTRL_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
-    sendMessage(CANJNI.LM_API_VCOMP_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
+    sendMessage(CANJaguarProto.LM_API_VOLT_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
+    sendMessage(CANJaguarProto.LM_API_SPD_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
+    sendMessage(CANJaguarProto.LM_API_POS_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
+    sendMessage(CANJaguarProto.LM_API_ICTRL_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
+    sendMessage(CANJaguarProto.LM_API_VCOMP_T_SET, new byte[0], 0, CANJNI.CAN_SEND_PERIOD_STOP_REPEATING);
 
     m_controlEnabled = false;
   }
@@ -1204,8 +1205,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setPercentMode() {
     changeControlMode(JaguarControlMode.PercentVbus);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
   }
 
   /**
@@ -1218,8 +1219,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setPercentMode(EncoderTag tag, int codesPerRev) {
     changeControlMode(JaguarControlMode.PercentVbus);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
   }
 
@@ -1233,8 +1234,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setPercentMode(QuadEncoderTag tag, int codesPerRev) {
     changeControlMode(JaguarControlMode.PercentVbus);
-    setPositionReference(CANJNI.LM_REF_ENCODER);
-    setSpeedReference(CANJNI.LM_REF_QUAD_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_ENCODER);
+    setSpeedReference(CANJaguarProto.LM_REF_QUAD_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
   }
 
@@ -1247,8 +1248,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setPercentMode(PotentiometerTag tag) {
     changeControlMode(JaguarControlMode.PercentVbus);
-    setPositionReference(CANJNI.LM_REF_POT);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_POT);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
     configPotentiometerTurns(1);
   }
 
@@ -1264,8 +1265,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setCurrentMode(double p, double i, double d) {
     changeControlMode(JaguarControlMode.Current);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
     setPID(p, i, d);
   }
 
@@ -1282,8 +1283,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setCurrentMode(EncoderTag tag, int codesPerRev, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Current);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
     configEncoderCodesPerRev(codesPerRev);
     setPID(p, i, d);
   }
@@ -1301,8 +1302,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setCurrentMode(QuadEncoderTag tag, int codesPerRev, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Current);
-    setPositionReference(CANJNI.LM_REF_ENCODER);
-    setSpeedReference(CANJNI.LM_REF_QUAD_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_ENCODER);
+    setSpeedReference(CANJaguarProto.LM_REF_QUAD_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
     setPID(p, i, d);
   }
@@ -1320,8 +1321,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setCurrentMode(PotentiometerTag tag, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Current);
-    setPositionReference(CANJNI.LM_REF_POT);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_POT);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
     configPotentiometerTurns(1);
     setPID(p, i, d);
   }
@@ -1340,8 +1341,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setSpeedMode(EncoderTag tag, int codesPerRev, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Speed);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
     setPID(p, i, d);
   }
@@ -1360,8 +1361,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setSpeedMode(QuadEncoderTag tag, int codesPerRev, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Speed);
-    setPositionReference(CANJNI.LM_REF_ENCODER);
-    setSpeedReference(CANJNI.LM_REF_QUAD_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_ENCODER);
+    setSpeedReference(CANJaguarProto.LM_REF_QUAD_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
     setPID(p, i, d);
   }
@@ -1380,7 +1381,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setPositionMode(QuadEncoderTag tag, int codesPerRev, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Position);
-    setPositionReference(CANJNI.LM_REF_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
     setPID(p, i, d);
   }
@@ -1398,7 +1399,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   @SuppressWarnings("ParameterName")
   public void setPositionMode(PotentiometerTag tag, double p, double i, double d) {
     changeControlMode(JaguarControlMode.Position);
-    setPositionReference(CANJNI.LM_REF_POT);
+    setPositionReference(CANJaguarProto.LM_REF_POT);
     configPotentiometerTurns(1);
     setPID(p, i, d);
   }
@@ -1410,8 +1411,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setVoltageMode() {
     changeControlMode(JaguarControlMode.Voltage);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
   }
 
   /**
@@ -1424,8 +1425,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setVoltageMode(EncoderTag tag, int codesPerRev) {
     changeControlMode(JaguarControlMode.Voltage);
-    setPositionReference(CANJNI.LM_REF_NONE);
-    setSpeedReference(CANJNI.LM_REF_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_NONE);
+    setSpeedReference(CANJaguarProto.LM_REF_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
   }
 
@@ -1439,8 +1440,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setVoltageMode(QuadEncoderTag tag, int codesPerRev) {
     changeControlMode(JaguarControlMode.Voltage);
-    setPositionReference(CANJNI.LM_REF_ENCODER);
-    setSpeedReference(CANJNI.LM_REF_QUAD_ENCODER);
+    setPositionReference(CANJaguarProto.LM_REF_ENCODER);
+    setSpeedReference(CANJaguarProto.LM_REF_QUAD_ENCODER);
     configEncoderCodesPerRev(codesPerRev);
   }
 
@@ -1452,8 +1453,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    */
   public void setVoltageMode(PotentiometerTag tag) {
     changeControlMode(JaguarControlMode.Voltage);
-    setPositionReference(CANJNI.LM_REF_POT);
-    setSpeedReference(CANJNI.LM_REF_NONE);
+    setPositionReference(CANJaguarProto.LM_REF_POT);
+    setSpeedReference(CANJaguarProto.LM_REF_NONE);
     configPotentiometerTurns(1);
   }
 
@@ -1628,11 +1629,11 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     switch (m_controlMode) {
       case PercentVbus:
         dataSize = packPercentage(data, rampRate / (m_maxOutputVoltage * kControllerRate));
-        message = CANJNI.LM_API_VOLT_SET_RAMP;
+        message = CANJaguarProto.LM_API_VOLT_SET_RAMP;
         break;
       case Voltage:
         dataSize = packFXP8_8(data, rampRate / kControllerRate);
-        message = CANJNI.LM_API_VCOMP_COMP_RAMP;
+        message = CANJaguarProto.LM_API_VCOMP_COMP_RAMP;
         break;
       default:
         throw new IllegalStateException(
@@ -1668,7 +1669,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    * @param mode Select to use the jumper setting or to override it to coast or brake.
    */
   public void configNeutralMode(NeutralMode mode) {
-    sendMessage(CANJNI.LM_API_CFG_BRAKE_COAST, new byte[]{mode.value}, 1);
+    sendMessage(CANJaguarProto.LM_API_CFG_BRAKE_COAST, new byte[]{mode.value}, 1);
 
     m_neutralMode = mode;
     m_neutralModeVerified = false;
@@ -1683,7 +1684,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     byte[] data = new byte[8];
 
     int dataSize = packINT16(data, (short) codesPerRev);
-    sendMessage(CANJNI.LM_API_CFG_ENC_LINES, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_ENC_LINES, data, dataSize);
 
     m_encoderCodesPerRev = (short) codesPerRev;
     m_encoderCodesPerRevVerified = false;
@@ -1701,7 +1702,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     byte[] data = new byte[8];
 
     int dataSize = packINT16(data, (short) turns);
-    sendMessage(CANJNI.LM_API_CFG_POT_TURNS, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_POT_TURNS, data, dataSize);
 
     m_potentiometerTurns = (short) turns;
     m_potentiometerTurnsVerified = false;
@@ -1745,7 +1746,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
    * @see LimitMode#SoftPositionLimits
    */
   public void configLimitMode(LimitMode mode) {
-    sendMessage(CANJNI.LM_API_CFG_LIMIT_MODE, new byte[]{mode.value}, 1);
+    sendMessage(CANJaguarProto.LM_API_CFG_LIMIT_MODE, new byte[]{mode.value}, 1);
   }
 
   /**
@@ -1762,7 +1763,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     int dataSize = packFXP16_16(data, forwardLimitPosition);
     data[dataSize++] = 1;
-    sendMessage(CANJNI.LM_API_CFG_LIMIT_FWD, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_LIMIT_FWD, data, dataSize);
 
     m_forwardLimit = forwardLimitPosition;
     m_forwardLimitVerified = false;
@@ -1782,7 +1783,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     int dataSize = packFXP16_16(data, reverseLimitPosition);
     data[dataSize++] = 1;
-    sendMessage(CANJNI.LM_API_CFG_LIMIT_REV, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_LIMIT_REV, data, dataSize);
 
     m_reverseLimit = reverseLimitPosition;
     m_reverseLimitVerified = false;
@@ -1800,7 +1801,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     byte[] data = new byte[8];
 
     int dataSize = packFXP8_8(data, voltage);
-    sendMessage(CANJNI.LM_API_CFG_MAX_VOUT, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_MAX_VOUT, data, dataSize);
 
     m_maxOutputVoltage = voltage;
     m_maxOutputVoltageVerified = false;
@@ -1824,7 +1825,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     }
 
     int dataSize = packINT16(data, (short) (faultTime * 1000.0));
-    sendMessage(CANJNI.LM_API_CFG_FAULT_TIME, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_CFG_FAULT_TIME, data, dataSize);
 
     m_faultTime = faultTime;
     m_faultTimeVerified = false;
@@ -1835,8 +1836,8 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
   // Parameters/configuration
   JaguarControlMode m_controlMode;
-  int m_speedReference = CANJNI.LM_REF_NONE;
-  int m_positionReference = CANJNI.LM_REF_NONE;
+  int m_speedReference = CANJaguarProto.LM_REF_NONE;
+  int m_positionReference = CANJaguarProto.LM_REF_NONE;
   @SuppressWarnings("MemberName")
   double m_p = 0.0;
   @SuppressWarnings("MemberName")
@@ -1898,10 +1899,10 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   static void sendMessageHelper(int messageID, byte[] data, int dataSize, int period)
       throws CANMessageNotFoundException {
     final int[] kTrustedMessages =
-        {CANJNI.LM_API_VOLT_T_EN, CANJNI.LM_API_VOLT_T_SET, CANJNI.LM_API_SPD_T_EN,
-            CANJNI.LM_API_SPD_T_SET, CANJNI.LM_API_VCOMP_T_EN, CANJNI.LM_API_VCOMP_T_SET,
-            CANJNI.LM_API_POS_T_EN, CANJNI.LM_API_POS_T_SET, CANJNI.LM_API_ICTRL_T_EN,
-            CANJNI.LM_API_ICTRL_T_SET};
+        {CANJaguarProto.LM_API_VOLT_T_EN, CANJaguarProto.LM_API_VOLT_T_SET, CANJaguarProto.LM_API_SPD_T_EN,
+            CANJaguarProto.LM_API_SPD_T_SET, CANJaguarProto.LM_API_VCOMP_T_EN, CANJaguarProto.LM_API_VCOMP_T_SET,
+            CANJaguarProto.LM_API_POS_T_EN, CANJaguarProto.LM_API_POS_T_SET, CANJaguarProto.LM_API_ICTRL_T_EN,
+            CANJaguarProto.LM_API_ICTRL_T_SET};
 
     for (byte i = 0; i < kTrustedMessages.length; i++) {
       if ((kFullMessageIDMask & messageID) == kTrustedMessages[i]) {
@@ -1994,7 +1995,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
   protected void getMessage(int messageID, int messageMask, byte[] data)
       throws CANMessageNotFoundException {
     messageID |= m_deviceNumber;
-    messageID &= CANJNI.CAN_MSGID_FULL_M;
+    messageID &= CANJaguarProto.CAN_MSGID_FULL_M;
 
     ByteBuffer targetedMessageID = ByteBuffer.allocateDirect(4);
     targetedMessageID.order(ByteOrder.LITTLE_ENDIAN);
@@ -2024,30 +2025,30 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     // Message 0 returns bus voltage, output voltage, output current, and
     // temperature.
     final byte[] kMessage0Data =
-        new byte[]{CANJNI.LM_PSTAT_VOLTBUS_B0, CANJNI.LM_PSTAT_VOLTBUS_B1,
-            CANJNI.LM_PSTAT_VOLTOUT_B0, CANJNI.LM_PSTAT_VOLTOUT_B1, CANJNI.LM_PSTAT_CURRENT_B0,
-            CANJNI.LM_PSTAT_CURRENT_B1, CANJNI.LM_PSTAT_TEMP_B0, CANJNI.LM_PSTAT_TEMP_B1};
+        new byte[]{CANJaguarProto.LM_PSTAT_VOLTBUS_B0, CANJaguarProto.LM_PSTAT_VOLTBUS_B1,
+            CANJaguarProto.LM_PSTAT_VOLTOUT_B0, CANJaguarProto.LM_PSTAT_VOLTOUT_B1, CANJaguarProto.LM_PSTAT_CURRENT_B0,
+            CANJaguarProto.LM_PSTAT_CURRENT_B1, CANJaguarProto.LM_PSTAT_TEMP_B0, CANJaguarProto.LM_PSTAT_TEMP_B1};
 
     // Message 1 returns position and speed
     final byte[] kMessage1Data =
-        new byte[]{CANJNI.LM_PSTAT_POS_B0, CANJNI.LM_PSTAT_POS_B1, CANJNI.LM_PSTAT_POS_B2,
-            CANJNI.LM_PSTAT_POS_B3, CANJNI.LM_PSTAT_SPD_B0, CANJNI.LM_PSTAT_SPD_B1,
-            CANJNI.LM_PSTAT_SPD_B2, CANJNI.LM_PSTAT_SPD_B3};
+        new byte[]{CANJaguarProto.LM_PSTAT_POS_B0, CANJaguarProto.LM_PSTAT_POS_B1, CANJaguarProto.LM_PSTAT_POS_B2,
+            CANJaguarProto.LM_PSTAT_POS_B3, CANJaguarProto.LM_PSTAT_SPD_B0, CANJaguarProto.LM_PSTAT_SPD_B1,
+            CANJaguarProto.LM_PSTAT_SPD_B2, CANJaguarProto.LM_PSTAT_SPD_B3};
 
     // Message 2 returns limits and faults
     final byte[] kMessage2Data =
-        new byte[]{CANJNI.LM_PSTAT_LIMIT_CLR, CANJNI.LM_PSTAT_FAULT, CANJNI.LM_PSTAT_END,
+        new byte[]{CANJaguarProto.LM_PSTAT_LIMIT_CLR, CANJaguarProto.LM_PSTAT_FAULT, CANJaguarProto.LM_PSTAT_END,
             (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,};
 
     dataSize = packINT16(data, (short) (kSendMessagePeriod));
-    sendMessage(CANJNI.LM_API_PSTAT_PER_EN_S0, data, dataSize);
-    sendMessage(CANJNI.LM_API_PSTAT_PER_EN_S1, data, dataSize);
-    sendMessage(CANJNI.LM_API_PSTAT_PER_EN_S2, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_PER_EN_S0, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_PER_EN_S1, data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_PER_EN_S2, data, dataSize);
 
     dataSize = 8;
-    sendMessage(CANJNI.LM_API_PSTAT_CFG_S0, kMessage0Data, dataSize);
-    sendMessage(CANJNI.LM_API_PSTAT_CFG_S1, kMessage1Data, dataSize);
-    sendMessage(CANJNI.LM_API_PSTAT_CFG_S2, kMessage2Data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_CFG_S0, kMessage0Data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_CFG_S1, kMessage1Data, dataSize);
+    sendMessage(CANJaguarProto.LM_API_PSTAT_CFG_S2, kMessage2Data, dataSize);
   }
 
   /**
@@ -2059,7 +2060,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
     // Check if a new bus voltage/output voltage/current/temperature message
     // has arrived and unpack the values into the cached member variables
     try {
-      getMessage(CANJNI.LM_API_PSTAT_DATA_S0, CANJNI.CAN_MSGID_FULL_M, data);
+      getMessage(CANJaguarProto.LM_API_PSTAT_DATA_S0, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
       m_busVoltage = unpackFXP8_8(new byte[]{data[0], data[1]});
       m_outputVoltage = unpackPercentage(new byte[]{data[2], data[3]}) * m_busVoltage;
@@ -2073,7 +2074,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     // Check if a new position/speed message has arrived and do the same
     try {
-      getMessage(CANJNI.LM_API_PSTAT_DATA_S1, CANJNI.CAN_MSGID_FULL_M, data);
+      getMessage(CANJaguarProto.LM_API_PSTAT_DATA_S1, CANJaguarProto.CAN_MSGID_FULL_M, data);
 
       m_position = unpackFXP16_16(new byte[]{data[0], data[1], data[2], data[3]});
       m_speed = unpackFXP16_16(new byte[]{data[4], data[5], data[6], data[7]});
@@ -2085,7 +2086,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     // Check if a new limits/faults message has arrived and do the same
     try {
-      getMessage(CANJNI.LM_API_PSTAT_DATA_S2, CANJNI.CAN_MSGID_FULL_M, data);
+      getMessage(CANJaguarProto.LM_API_PSTAT_DATA_S2, CANJaguarProto.CAN_MSGID_FULL_M, data);
       m_limits = data[0];
       m_faults = data[1];
 
@@ -2105,7 +2106,7 @@ public class CANJaguar implements MotorSafety, PIDOutput, CANSpeedController {
 
     data[0] = syncGroup;
 
-    sendMessageHelper(CANJNI.CAN_MSGID_API_SYNC, data, 1, CANJNI.CAN_SEND_PERIOD_NO_REPEAT);
+    sendMessageHelper(CANJaguarProto.CAN_MSGID_API_SYNC, data, 1, CANJNI.CAN_SEND_PERIOD_NO_REPEAT);
   }
 
   /* we are on ARM-LE now, not Freescale so no need to swap */
