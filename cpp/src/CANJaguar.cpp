@@ -250,7 +250,7 @@ int CANJaguar::getDeviceNumber() const { return m_deviceNumber; }
  * @param syncGroup   The update group to add this Set() to, pending
  *                    UpdateSyncGroup().  If 0, update immediately.
  */
-void CANJaguar::Set(float outputValue, int syncGroup) {
+void CANJaguar::Set(double outputValue, int syncGroup) {
   int messageID;
   uint8_t dataBuffer[8];
   uint8_t dataSize;
@@ -322,7 +322,7 @@ void CANJaguar::Set(float outputValue, int syncGroup) {
  *
  * @return The most recently set outputValue setpoint.
  */
-float CANJaguar::Get() const { return m_value; }
+double CANJaguar::Get() const { return m_value; }
 
 /**
 * Common interface for disabling a motor.
@@ -339,7 +339,7 @@ void CANJaguar::Disable() { DisableControl(); }
  * @param output Write out the PercentVbus value as was computed by the
  *               PIDController
  */
-void CANJaguar::PIDWrite(float output) {
+void CANJaguar::PIDWrite(double output) {
   if (m_controlMode == kPercentVbus) {
     Set(output);
   } else {
@@ -1545,7 +1545,7 @@ void CANJaguar::SetVoltageMode(CANJaguar::PotentiometerStruct) {
  *
  * @param outputValue The set-point to sent to the motor controller.
  */
-void CANJaguar::Set(float outputValue) { Set(outputValue, 0); }
+void CANJaguar::Set(double outputValue) { Set(outputValue, 0); }
 
 /**
  * Used internally. In order to set the control mode see the methods listed
@@ -1592,7 +1592,7 @@ CANJaguar::ControlMode CANJaguar::GetControlMode() const {
  *
  * @return The bus voltage in volts.
  */
-float CANJaguar::GetBusVoltage() const {
+double CANJaguar::GetBusVoltage() const {
   updatePeriodicStatus();
   std::lock_guard<priority_recursive_mutex> lock(m_mutex);
 
@@ -1604,7 +1604,7 @@ float CANJaguar::GetBusVoltage() const {
  *
  * @return The output voltage in volts.
  */
-float CANJaguar::GetOutputVoltage() const {
+double CANJaguar::GetOutputVoltage() const {
   updatePeriodicStatus();
   std::lock_guard<priority_recursive_mutex> lock(m_mutex);
 
@@ -1616,7 +1616,7 @@ float CANJaguar::GetOutputVoltage() const {
  *
  * @return The output current in amps.
  */
-float CANJaguar::GetOutputCurrent() const {
+double CANJaguar::GetOutputCurrent() const {
   updatePeriodicStatus();
   std::lock_guard<priority_recursive_mutex> lock(m_mutex);
 
@@ -1628,7 +1628,7 @@ float CANJaguar::GetOutputCurrent() const {
  *
  * @return The temperature of the Jaguar in degrees Celsius.
  */
-float CANJaguar::GetTemperature() const {
+double CANJaguar::GetTemperature() const {
   updatePeriodicStatus();
   std::lock_guard<priority_recursive_mutex> lock(m_mutex);
 
@@ -1915,7 +1915,7 @@ void CANJaguar::ConfigMaxOutputVoltage(double voltage) {
  *
  * @param faultTime The time to wait before resuming operation, in seconds.
  */
-void CANJaguar::ConfigFaultTime(float faultTime) {
+void CANJaguar::ConfigFaultTime(double faultTime) {
   uint8_t dataBuffer[8];
   uint8_t dataSize;
 
@@ -1942,11 +1942,11 @@ void CANJaguar::UpdateSyncGroup(uint8_t syncGroup) {
                     CAN_SEND_PERIOD_NO_REPEAT);
 }
 
-void CANJaguar::SetExpiration(float timeout) {
+void CANJaguar::SetExpiration(double timeout) {
   if (m_safetyHelper) m_safetyHelper->SetExpiration(timeout);
 }
 
-float CANJaguar::GetExpiration() const {
+double CANJaguar::GetExpiration() const {
   if (!m_safetyHelper) return 0.0;
   return m_safetyHelper->GetExpiration();
 }

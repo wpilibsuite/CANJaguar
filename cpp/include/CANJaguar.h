@@ -60,7 +60,7 @@ class CANJaguar : public MotorSafety,
   int GetHardwareVersion() const;
 
   // PIDOutput interface
-  void PIDWrite(float output) override;
+  void PIDWrite(double output) override;
 
   // Control mode methods
   void EnableControl(double encoderInitialPosition = 0.0);
@@ -92,11 +92,11 @@ class CANJaguar : public MotorSafety,
   void SetVoltageMode(QuadEncoderStruct, uint16_t codesPerRev);
   void SetVoltageMode(PotentiometerStruct);
 
-  void Set(float value, int syncGroup);
+  void Set(double value, int syncGroup);
 
   // CANSpeedController interface
-  float Get() const override;
-  void Set(float value) override;
+  double Get() const override;
+  void Set(double value) override;
   void Disable() override;
   void SetP(double p) override;
   void SetI(double i) override;
@@ -106,10 +106,10 @@ class CANJaguar : public MotorSafety,
   double GetI() const override;
   double GetD() const override;
   bool IsModePID(CANSpeedController::ControlMode mode) const override;
-  float GetBusVoltage() const override;
-  float GetOutputVoltage() const override;
-  float GetOutputCurrent() const override;
-  float GetTemperature() const override;
+  double GetBusVoltage() const override;
+  double GetOutputVoltage() const override;
+  double GetOutputCurrent() const override;
+  double GetTemperature() const override;
   double GetPosition() const override;
   double GetSpeed() const override;
   bool GetForwardLimitOK() const override;
@@ -127,14 +127,14 @@ class CANJaguar : public MotorSafety,
   void ConfigForwardLimit(double forwardLimitPosition) override;
   void ConfigReverseLimit(double reverseLimitPosition) override;
   void ConfigMaxOutputVoltage(double voltage) override;
-  void ConfigFaultTime(float faultTime) override;
+  void ConfigFaultTime(double faultTime) override;
   virtual void SetControlMode(ControlMode mode);
   virtual ControlMode GetControlMode() const;
 
   static void UpdateSyncGroup(uint8_t syncGroup);
 
-  void SetExpiration(float timeout) override;
-  float GetExpiration() const override;
+  void SetExpiration(double timeout) override;
+  double GetExpiration() const override;
   bool IsAlive() const override;
   void StopMotor() override;
   bool IsSafetyEnabled() const override;
@@ -177,7 +177,7 @@ class CANJaguar : public MotorSafety,
   mutable priority_recursive_mutex m_mutex;
 
   int m_deviceNumber;
-  float m_value = 0.0f;
+  double m_value = 0.0f;
 
   // Parameters/configuration
   ControlMode m_controlMode = kPercentVbus;
