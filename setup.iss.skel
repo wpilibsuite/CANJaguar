@@ -3,7 +3,6 @@
 
 #define MyAppName "CANJaguar software libraries"
 #define MyAppShortName "CANJaguar"
-#define MyAppVersion "1.0.0"
 #define MyAppPublisher "FIRST"
 #define MyAppURL "http://www.firstinspires.org"
 
@@ -13,16 +12,16 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{01A68915-B6D3-4D8E-A498-43744E3FC5FD}
 AppName={#MyAppName}
-AppVersion={#MyAppVersion}
+AppVersion=${applicationVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={%USERPROFILE}\wpilib\user
+DefaultDirName={%USERPROFILE}\\wpilib\\user
 UninstallDisplayName=Uninstall_{#MyAppName}
 DefaultGroupName={#MyAppName}
-OutputBaseFilename=setup
+OutputBaseFilename=CANJaguar_Libs_${applicationVersion}
 Compression=lzma
 SolidCompression=yes
 Uninstallable=no
@@ -31,8 +30,8 @@ Uninstallable=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "release\cpp\*"; DestDIR: "{app}\cpp"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "release\java\*"; DestDIR: "{app}\java"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "lv\*"; DestDir: "{pf}\National Instruments\LabVIEW 2016\vi.lib\Rock Robotics\WPI\ThirdParty\CanMotor"; Flags: ignoreversion recursesubdirs
+Source: "cpp\\*"; DestDIR: "{app}\\cpp"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "java\\*"; DestDIR: "{app}\\java"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\\lv\\*"; DestDir: "{pf}\\National Instruments\\LabVIEW 2016\\vi.lib\\Rock Robotics\\WPI\\ThirdParty\\CanMotor"; Flags: ignoreversion recursesubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
